@@ -1,9 +1,11 @@
 #! /bin/env python
 
+import sys
+
 __author__="leopku@qq.com"
 __date__ ="$2010-9-27 14:36:59$"
 
-def buildMail(subject, text, address_from, address_to, address_cc=None, images=None):
+def build_mail(subject, text, address_from, address_to, address_cc=None, images=None):
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEText import MIMEText
     from email.MIMEImage import MIMEImage
@@ -24,19 +26,20 @@ def buildMail(subject, text, address_from, address_to, address_cc=None, images=N
 
     return msgRoot
 
-def sendMail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password):
+def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password):
     import smtplib
     smtp = smtplib.SMTP()
     smtp.connect(smtp_host)
     # smtp = smtplib.SMTP(smtp_host)
-    smtp.login(smtp_user, smtp_password)
-    mailbody = buildMail(subject, content, address_from, address_to)
-    smtp.sendmail(address_from, address_to, mailbody.as_string())
+    if smtp_user:
+        smtp.login(smtp_user, smtp_password)
+    mailbody = build_mail(subject, content, address_from, address_to)
+    smtp.sendmail(address_from, address_to.split(';'), mailbody.as_string())
     smtp.quit()
     ## end of http://code.activestate.com/recipes/473810/
 if __name__ == "__main__":
     import optparse
-    USAGE = '%prog [--host=smtp.yourdomain.com] <--port> [--user=smtpaccount] [--password=smtppass] <--subject=subject> [--content=mailbody]|[--file=filename] [--from=sender] [--to=reciver].\n\nExample: %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com, friends2@domain2.com, friends3@domain3.com" --user="my" --password="p4word" -s "Hello from MailViaSMTP" -c "This is a mail just for testing."'
+    USAGE = 'python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> [--content=mailbody]|[--file=filename] [--from=sender] [--to=reciver].\n\nexample: %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="my" --password="p4word" -s "Hello from MailViaSMTP" -c "This is a mail just for testing."'
     VERSION = '%prog 1.0'
     DESC = """This is a command line kit for sending mail via
     smtp server which can use in multiple platforms like linux, BSD, Windows etc.
@@ -51,8 +54,8 @@ if __name__ == "__main__":
     parser.add_option('-F', '--file', dest='file', help='Read mail body from file. NOTE:  --file will be ignored if work with --content option at same tome.')
     parser.add_option('--host', help='SMTP server host name or ip.')
     parser.add_option('-P', '--port', help='SMTP server port number.')
-    parser.add_option('-u', '--user', help='the username for SMTP server authorcation.')
-    parser.add_option('-p', '--password', help='the password for SMTP server authorcation.')
+    parser.add_option('-u', '--user', help='The username for SMTP server authorcation. Left this option empty for non-auth smtp server.')
+    parser.add_option('-p', '--password', help='The password for SMTP server authorcation. If --user option is empty, this option will be ignored.')
     opts, args= parser.parse_args()
     #print opts.host
     #print opts.user
@@ -61,7 +64,6 @@ if __name__ == "__main__":
     #    opts.subject = ''
     if opts.host is None or opts.address_from is None or opts.address_to is None:
         sys.exit('ERROR:  All parameters belowed were required: --host, --from and --to.\n\nUse -h to get more help.')
-     address_to = opt.address_to.split(',')
     if opts.content:
         content = opts.content
     else:
@@ -75,4 +77,4 @@ if __name__ == "__main__":
             #print 'Now exitting.'
             sys.exit('ERROR: One of --content and --file was required.\n\nUse -h to get more help.')
 
-    sendMail(opts.subject, content, opts.address_from, address_to, opts.host, opts.user, opts.password)
+    send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host, opts.user, opts.password)
