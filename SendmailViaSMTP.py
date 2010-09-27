@@ -1,4 +1,16 @@
 #! /bin/env python
+##############################################
+# SendmailViaSMTP is a kit for sending mail
+# under console throught exist SMTP server.
+#
+# Author: leopku@qq.com
+#
+# History:
+#   2010-09-27:
+#       + add support for Gmail(smtp.gmail.com).
+#       * fixed bugs for multi recipients.
+#       + first release.
+##############################################
 
 import sys
 
@@ -26,11 +38,21 @@ def build_mail(subject, text, address_from, address_to, address_cc=None, images=
 
     return msgRoot
 
-def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password):
+def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password, smtp_port=None,using_tls=None):
     import smtplib
     smtp = smtplib.SMTP()
-    smtp.connect(smtp_host)
     # smtp = smtplib.SMTP(smtp_host)
+    is_gmail = False
+    if smtp_host == "smtp.gmail.com":
+        is_gmail = True
+    port = 25
+    if smtp_port:
+        port = smtp_port
+    if is_gmail:
+        port = 587
+    smtp.connect(smtp_host, port)
+    if using_tls or is_gmail:
+        smtp.starttls()
     if smtp_user:
         smtp.login(smtp_user, smtp_password)
     mailbody = build_mail(subject, content, address_from, address_to)
@@ -56,6 +78,7 @@ if __name__ == "__main__":
     parser.add_option('-P', '--port', help='SMTP server port number.')
     parser.add_option('-u', '--user', help='The username for SMTP server authorcation. Left this option empty for non-auth smtp server.')
     parser.add_option('-p', '--password', help='The password for SMTP server authorcation. If --user option is empty, this option will be ignored.')
+    parser.add_option('--tls', help='Use tls while connecting SMTP server. Default false. While using smtp.gmail.com, this option becomes defaults true.')
     opts, args= parser.parse_args()
     #print opts.host
     #print opts.user
@@ -77,4 +100,4 @@ if __name__ == "__main__":
             #print 'Now exitting.'
             sys.exit('ERROR: One of --content and --file was required.\n\nUse -h to get more help.')
 
-    send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host, opts.user, opts.password)
+    send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host,opts.user, opts.password,  opts.port, opts.tls)
