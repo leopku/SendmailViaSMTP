@@ -52,6 +52,7 @@ def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, 
         smtp_port = 587
     smtp.connect(smtp_host, smtp_port)
     if using_tls or is_gmail:
+        smtp.ehlo() # must do before 2.5.x or lower.
         smtp.starttls()
     if smtp_user:
         smtp.login(smtp_user, smtp_password)
