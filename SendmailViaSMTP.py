@@ -6,7 +6,10 @@
 # Author: leopku#qq.com
 #
 # History:
+#   2012-03-13:
+#       * Fixed sending mail under python 2.4x(thanks yong.yang).
 #   2011-12-28:
+#       + add README.rst.
 #       + add pipe mode -- accept data as mail body which transfered through pipe.
 #       + implement file mode.
 #       * adjust the file mode has higher priority than option mode.
@@ -60,8 +63,8 @@ def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, 
         smtp_port = 587
     smtp.connect(smtp_host, smtp_port)
     if using_tls or is_gmail:
-        smtp.ehlo() # must do while python is 2.5.x or lower.
         smtp.starttls()
+        smtp.ehlo() # must do while python is 2.5.x or lower.
         smtp.esmtp_features['auth'] = 'LOGIN DIGEST-MD5 PLAIN'
     if smtp_user:
         smtp.login(smtp_user, smtp_password)
