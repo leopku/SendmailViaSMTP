@@ -26,12 +26,13 @@
 
 import sys
 import os
+import os.path
 import fileinput
 
 __author__="leopku@qq.com"
-__date__ ="$2011-12-28 12:34:56$"
+__date__ ="$2012-08-15 14:51:56$"
 
-def build_mail(subject, text, address_from, address_to, address_cc=None, images=None):
+def build_mail(subject, text, address_from, address_to, address_cc=None, attachment=[]):
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEText import MIMEText
     from email.MIMEImage import MIMEImage
@@ -50,9 +51,30 @@ def build_mail(subject, text, address_from, address_to, address_cc=None, images=
     msgContent = MIMEText(text, 'html', 'utf-8')
     msgAlternative.attach(msgContent)
 
+    if attachment:
+        for filename in attachment:
+            if not os.path.isfile(filename):
+                print 'WARNING: Unable to attach %s because it is not a file.' % filename
+                continue
+
+            ctype, encoding = mimetypes.guess_type(filename)
+            if ctype is None or encoding is not None:
+                ctype = 'application/octet-stream'
+            maintype, subtype = ctype.split('/', 1)
+
+            fp = open(filename, 'rb')
+            attach = MIMEBase("application", "octet-stream")
+            attach.set_payload(fp.read())
+            fp.close()
+
+            Encoders.encode_base64(attach)
+            attach.add_header('Content-Disposition', 'attachment', filename=filename)
+
+            msgRoot.attach(attach)
+
     return msgRoot
 
-def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password, smtp_port=25,using_tls=False):
+def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password, smtp_port=25,using_tls=False, attachment=[]):
     import smtplib
     smtp = smtplib.SMTP()
     # smtp = smtplib.SMTP(smtp_host)
@@ -68,18 +90,28 @@ def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, 
         smtp.esmtp_features['auth'] = 'LOGIN DIGEST-MD5 PLAIN'
     if smtp_user:
         smtp.login(smtp_user, smtp_password)
-    mailbody = build_mail(subject, content, address_from, address_to)
+    mailbody = build_mail(subject, content, address_from, address_to, attachment)
     smtp.sendmail(address_from, address_to.split(';'), mailbody.as_string())
     smtp.quit()
     ## end of http://code.activestate.com/recipes/473810/
     
 if __name__ == "__main__":
     import optparse
-    USAGE = 'python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> [--file=filename]|[--content=mailbody] [--from=sender] [--to=reciver].\n\nexample: \n\n1.echo "blablabla" | python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" --subject="mail title"\n\n2. python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" --subject="mail title" --file=/path/of/file\n\n3.%prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="myname@yourdomain.com" --password="p4word" -s "Hello from MailViaSMTP" -c "This is a mail just for testing."\n\nThe priority of three content inputing method is: piped-data, --file, --content.'
+    USAGE = 'python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> \
+        [--file=filename]|[--content=mailbody] [--from=sender] [--to=reciver].\n\nexample: \n\n1.echo "blablabla" | \
+        python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" \
+        --user="myname@yourdomain.com" --password="p4word" --subject="mail title"\n\n2. python %prog --host="mail.domain.com" \
+        --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" \
+        --subject="mail title" --file=/path/of/file\n\n3. python %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" \
+        --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="myname@yourdomain.com" --password="p4word" \
+        -s "Hello from MailViaSMTP" -c "This is a mail just for testing."\n\nThe priority of three content inputing method is: piped-data, \
+        --file, --content.'
     VERSION = '%prog 1.1'
-    DESC = u"""This is a command line kit for sending mail via smtp server which can use in multiple platforms like linux, BSD, Windows etc. This little kit was written by leopku#qq.com using python. The minimum version of python required was 2.3."""
+    DESC = u"""This is a command line kit for sending mail via smtp server which can use in multiple platforms like linux, BSD, Windows etc. \
+        This little kit was written by leopku#qq.com using python. The minimum version of python required was 2.3."""
 
     parser = optparse.OptionParser(usage=USAGE, version=VERSION, description=DESC)
+    parser.add_option('-a', '--attach', default=[], action='append', help='Specifies an attachment to be attached. Can be specified more than once.')
     parser.add_option('-s', '--subject', help='The subject of the mail.')
     parser.add_option('-c', '--content', help='option mode. Mail body should be passed through this option. Note: this option should be ignored while working with piped-data or --file option.')
     parser.add_option('-f', '--from', dest='address_from', metavar='my@domain.com', help='Set envelope from address. If --user option is not empty, commonly this option should be equaled with --user options. Otherwize, the authoration of the smtp server should be failed.')
@@ -112,6 +144,6 @@ if __name__ == "__main__":
         except:
             pass
     if content:
-        send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host,opts.user, opts.password,  opts.port, opts.tls)
+        send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host,opts.user, opts.password,  opts.port, opts.tls, opts.attach)
     else:
         sys.exit('ERROR: Mail content is EMPTY! Please specify one option of piped-data or --file or --content.\n\nUse -h to get more help.')
