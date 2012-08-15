@@ -21,6 +21,7 @@ Features
 * Tls support. This means we support sending mail using gmail.
 * Multi recipient support.
 * Multi system supported, like Linux, BSD, Windows etc.
+* **NEW**: Attachments support(using -a/--attach option, see help message for more).
 
 Requirements
 -------------
