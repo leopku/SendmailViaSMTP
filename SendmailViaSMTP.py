@@ -6,6 +6,8 @@
 # Author: leopku#qq.com
 #
 # History:
+#   2012-08-15:
+#       + support attachments(-a or --attach option).
 #   2012-03-13:
 #       * Fixed sending mail under python 2.4x(thanks yong.yang).
 #   2011-12-28:
@@ -33,6 +35,9 @@ __author__="leopku@qq.com"
 __date__ ="$2012-08-15 14:51:56$"
 
 def build_mail(subject, text, address_from, address_to, address_cc=None, attachment=[]):
+    import mimetypes
+    from email import Encoders
+    from email.MIMEBase import MIMEBase
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEText import MIMEText
     from email.MIMEImage import MIMEImage
@@ -90,7 +95,7 @@ def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, 
         smtp.esmtp_features['auth'] = 'LOGIN DIGEST-MD5 PLAIN'
     if smtp_user:
         smtp.login(smtp_user, smtp_password)
-    mailbody = build_mail(subject, content, address_from, address_to, attachment)
+    mailbody = build_mail(subject, content, address_from, address_to, attachment=attachment)
     smtp.sendmail(address_from, address_to.split(';'), mailbody.as_string())
     smtp.quit()
     ## end of http://code.activestate.com/recipes/473810/
@@ -111,7 +116,7 @@ if __name__ == "__main__":
         This little kit was written by leopku#qq.com using python. The minimum version of python required was 2.3."""
 
     parser = optparse.OptionParser(usage=USAGE, version=VERSION, description=DESC)
-    parser.add_option('-a', '--attach', default=[], action='append', help='Specifies an attachment to be attached. Can be specified more than once.')
+    parser.add_option('-a', '--attach', default=[], action='append', help='Specifies a file as attachment to be attached. Can be specified more than once.')
     parser.add_option('-s', '--subject', help='The subject of the mail.')
     parser.add_option('-c', '--content', help='option mode. Mail body should be passed through this option. Note: this option should be ignored while working with piped-data or --file option.')
     parser.add_option('-f', '--from', dest='address_from', metavar='my@domain.com', help='Set envelope from address. If --user option is not empty, commonly this option should be equaled with --user options. Otherwize, the authoration of the smtp server should be failed.')
