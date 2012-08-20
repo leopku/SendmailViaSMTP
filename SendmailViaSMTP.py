@@ -6,6 +6,8 @@
 # Author: leopku#qq.com
 #
 # History:
+#   2012-08-20:
+#       * fixed homepage link broken in README.rst(thanks http://weibo.com/royshan ).
 #   2012-08-15:
 #       + support attachments(-a or --attach option).
 #   2012-03-13:

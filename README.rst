@@ -11,7 +11,7 @@ SendmailViaSMTP is distributed under the BSD license.
 
 Where is SendmailViaSMTP
 --------------------------
-* Homepage: http://wenjiagou.com(Chinese)
+* Homepage: http://wenjiagou.com (Chinese)
 * Source code: https://github.com/leopku/SendmailViaSMTP
 
 Features
