@@ -6,6 +6,8 @@
 # Author: leopku#qq.com
 #
 # History:
+#   2012-09-29:
+#       * restruct the codes.
 #   2012-08-20:
 #       * fixed homepage link broken in README.rst(thanks http://weibo.com/royshan ).
 #   2012-08-15:
@@ -33,91 +35,98 @@ import os
 import os.path
 import fileinput
 
-__author__="leopku@qq.com"
-__date__ ="$2012-08-15 14:51:56$"
+import smtplib
+import mimetypes
+from email import Encoders
+from email.MIMEBase import MIMEBase
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
+from email.MIMEImage import MIMEImage
 
-def build_mail(subject, text, address_from, address_to, address_cc=None, attachment=[]):
-    import mimetypes
-    from email import Encoders
-    from email.MIMEBase import MIMEBase
-    from email.MIMEMultipart import MIMEMultipart
-    from email.MIMEText import MIMEText
-    from email.MIMEImage import MIMEImage
+__author__ ="leopku#qq.com"
+__date__ ="$2012-08-25 14:05:56$"
+__usage__ = 'python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> \
+    [--file=filename]|[--content=mailbody] [--from=sender] [--to=reciver].\n\nexample: \n\n1.echo "blablabla" | \
+    python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" \
+    --user="myname@yourdomain.com" --password="p4word" --subject="mail title"\n\n2. python %prog --host="mail.domain.com" \
+    --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" \
+    --subject="mail title" --file=/path/of/file\n\n3. python %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" \
+    --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="myname@yourdomain.com" --password="p4word" \
+    -s "Hello from MailViaSMTP" -c "This is a mail just for testing."\n\nThe priority of three content inputing method is: piped-data, \
+    --file, --content.'
+__version__ = '%prog 1.1'
+__desc__ = u"""This is a command line kit for sending mail via smtp server which can use in multiple platforms like linux, BSD, Windows etc. \
+    This little kit was written by %s using python. The minimum version of python required was 2.3.""" % (__author__)
 
-    msgRoot = MIMEMultipart('related')
-    msgRoot['Subject'] = subject
-    msgRoot['From'] = address_from
-    msgRoot['To'] = address_to
-    #text_msg = MIMEText(text)
-    #msgRoot.attach(text_msg)
-    msgRoot.preamble = 'This is a multi-part message in MIME format.'
-    # Encapsulate the plain and HTML versions of the message body in an
-    # 'alternative' part, so message agents can decide which they want to display.
-    msgAlternative = MIMEMultipart('alternative')
-    msgRoot.attach(msgAlternative)
-    msgContent = MIMEText(text, 'html', 'utf-8')
-    msgAlternative.attach(msgContent)
+class Mail:
+    """docstring for Mail"""
+    def __init__(self, subject='', content='', m_from='', m_to='', m_cc=''):
+        self.subject = subject
+        self.content = MIMEText(content, 'html', 'utf-8')
+        self.m_from = m_from
+        self.m_to = m_to
+        self.m_cc = m_cc
 
-    if attachment:
-        for filename in attachment:
-            if not os.path.isfile(filename):
-                print 'WARNING: Unable to attach %s because it is not a file.' % filename
-                continue
+        self.body = MIMEMultipart('related')
+        self.body['Subject'] = self.subject
+        self.body['From'] = self.m_from
+        self.body['To'] = self.m_to
+        self.body.preamble = 'This is a multi-part message in MIME format.'
 
-            ctype, encoding = mimetypes.guess_type(filename)
-            if ctype is None or encoding is not None:
-                ctype = 'application/octet-stream'
-            maintype, subtype = ctype.split('/', 1)
+        self.alternative = MIMEMultipart('alternative')
+        self.body.attach(self.alternative)
+        self.alternative.attach(self.content)
 
-            fp = open(filename, 'rb')
-            attach = MIMEBase("application", "octet-stream")
-            attach.set_payload(fp.read())
-            fp.close()
+    def attach(self, attachments):
+        if attachments:
+            for attachment in attachments:
+                if not os.path.isfile(attachment):
+                    print 'WARNING: Unable to attach %s because it is not a file.' % attachment
+                    continue
+                
+                ctype, encoding = mimetypes.guess_type(attachment)
+                if ctype is None or encoding is not None:
+                    ctype = 'application/octet-stream'
+                maintype, subtype = ctype.split('/', 1)
 
-            Encoders.encode_base64(attach)
-            attach.add_header('Content-Disposition', 'attachment', filename=filename)
+                fp = open(attachment, 'rb')
+                attachment_mime = MIMEBase("application", "octet-stream")
+                attachment_mime.set_payload(fp.read())
+                fp.close()
 
-            msgRoot.attach(attach)
+                Encoders.encode_base64(attachment_mime)
+                attachment_mime.attadd_header('Content-Disposition', 'attachment', filename=attachment)
+                self.body.attach(attachment_mime)
+ 
+class SMTPServer:
+    """docstring for SMTPServer"""
+    def __init__(self, host='localhost', user='', password='', port=25, tls=False):
+        self.port = port
+        self.smtp = smtplib.SMTP()
+        self.host = host
+        self.user = user
+        self.password = password
+        self.is_gmail = False
+        if self.host == 'smtp.gmail.com':
+           self.is_gmail = True
+           self.port = 587
+        self.tls = tls
 
-    return msgRoot
+    def sendmail(self, mail):
+        self.smtp.connect(self.host, self.port)
+        if self.tls or self.is_gmail:
+            self.smtp.starttls()
+            self.smtp.ehlo()
+            self.smtp.esmtp_features['auth'] = 'LOGIN DIGEST-MD5 PLAIN'
+        if self.user:
+            self.smtp.login(self.user, self.password)
+        self.smtp.sendmail(mail.m_from, mail.m_to.split(';'), mail.body.as_string())
+        self.smtp.quit()
 
-def send_mail(subject, content, address_from, address_to, smtp_host, smtp_user, smtp_password, smtp_port=25,using_tls=False, attachment=[]):
-    import smtplib
-    smtp = smtplib.SMTP()
-    # smtp = smtplib.SMTP(smtp_host)
-    is_gmail = False
-    if smtp_host == "smtp.gmail.com":
-        is_gmail = True
-    if is_gmail:
-        smtp_port = 587
-    smtp.connect(smtp_host, smtp_port)
-    if using_tls or is_gmail:
-        smtp.starttls()
-        smtp.ehlo() # must do while python is 2.5.x or lower.
-        smtp.esmtp_features['auth'] = 'LOGIN DIGEST-MD5 PLAIN'
-    if smtp_user:
-        smtp.login(smtp_user, smtp_password)
-    mailbody = build_mail(subject, content, address_from, address_to, attachment=attachment)
-    smtp.sendmail(address_from, address_to.split(';'), mailbody.as_string())
-    smtp.quit()
-    ## end of http://code.activestate.com/recipes/473810/
-    
 if __name__ == "__main__":
     import optparse
-    USAGE = 'python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> \
-        [--file=filename]|[--content=mailbody] [--from=sender] [--to=reciver].\n\nexample: \n\n1.echo "blablabla" | \
-        python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" \
-        --user="myname@yourdomain.com" --password="p4word" --subject="mail title"\n\n2. python %prog --host="mail.domain.com" \
-        --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" \
-        --subject="mail title" --file=/path/of/file\n\n3. python %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" \
-        --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="myname@yourdomain.com" --password="p4word" \
-        -s "Hello from MailViaSMTP" -c "This is a mail just for testing."\n\nThe priority of three content inputing method is: piped-data, \
-        --file, --content.'
-    VERSION = '%prog 1.1'
-    DESC = u"""This is a command line kit for sending mail via smtp server which can use in multiple platforms like linux, BSD, Windows etc. \
-        This little kit was written by leopku#qq.com using python. The minimum version of python required was 2.3."""
 
-    parser = optparse.OptionParser(usage=USAGE, version=VERSION, description=DESC)
+    parser = optparse.OptionParser(usage=__usage__, version=__version__, description=__desc__)
     parser.add_option('-a', '--attach', default=[], action='append', help='Specifies a file as attachment to be attached. Can be specified more than once.')
     parser.add_option('-s', '--subject', help='The subject of the mail.')
     parser.add_option('-c', '--content', help='option mode. Mail body should be passed through this option. Note: this option should be ignored while working with piped-data or --file option.')
@@ -151,6 +160,10 @@ if __name__ == "__main__":
         except:
             pass
     if content:
-        send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host,opts.user, opts.password,  opts.port, opts.tls, opts.attach)
+        #send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host,opts.user, opts.password,  opts.port, opts.tls, opts.attach)
+        mail = Mail(opts.subject, content, opts.address_from, opts.address_to)
+        mail.attach(opts.attach)
+        smtp = SMTPServer(opts.host, opts.user, opts.password, opts.port, opts.tls)
+        smtp.sendmail(mail)
     else:
-        sys.exit('ERROR: Mail content is EMPTY! Please specify one option of piped-data or --file or --content.\n\nUse -h to get more help.')
+        sys.exit('ERROR: Mail content is EMPTY! Please specify one option of listed: piped-data, --file or --content.\n\nUse -h to get more help.')
