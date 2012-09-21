@@ -57,6 +57,5 @@ Run SendmailViaSMTP.py in terminal
     
 TODO
 -----
-* attachment support.
 
 .. [#] pipe mode is very useful while working with nagios etc.
