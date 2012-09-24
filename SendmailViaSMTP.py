@@ -6,7 +6,10 @@
 # Author: leopku#qq.com
 #
 # History:
-#   2012-09-29:
+#   2012-09-24:
+#       * some changes.
+#       * update the version number to 1.2.
+#   2012-09-19:
 #       * restruct the codes.
 #   2012-08-20:
 #       * fixed homepage link broken in README.rst(thanks http://weibo.com/royshan ).
@@ -45,18 +48,20 @@ from email.MIMEImage import MIMEImage
 
 __author__ ="leopku#qq.com"
 __date__ ="$2012-08-25 14:05:56$"
-__usage__ = 'python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> \
-    [--file=filename]|[--content=mailbody] [--from=sender] [--to=reciver].\n\nexample: \n\n1.echo "blablabla" | \
-    python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" \
-    --user="myname@yourdomain.com" --password="p4word" --subject="mail title"\n\n2. python %prog --host="mail.domain.com" \
-    --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" \
-    --subject="mail title" --file=/path/of/file\n\n3. python %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" \
-    --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="myname@yourdomain.com" --password="p4word" \
-    -s "Hello from MailViaSMTP" -c "This is a mail just for testing."\n\nThe priority of three content inputing method is: piped-data, \
-    --file, --content.'
-__version__ = '%prog 1.1'
-__desc__ = u"""This is a command line kit for sending mail via smtp server which can use in multiple platforms like linux, BSD, Windows etc. \
-    This little kit was written by %s using python. The minimum version of python required was 2.3.""" % (__author__)
+
+__usage__ = u'''python %prog [--host=smtp.yourdomain.com] <--port=110> [--user=smtpaccount] [--password=smtppass] <--subject=subject> [--file=filename]|[--content=mailbody] [--from=sender] [--to=reciver].
+    
+    example:
+    1. echo "blablabla" | python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" --subject="mail title"
+    2. python %prog --host="mail.domain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain.com" --user="myname@yourdomain.com" --password="p4word" --subject="mail title" --file=/path/of/file
+    3. python %prog --host="mail.yourdomain.com" --from="myname@yourdomain.com" --to="friends1@domain1.com;friends2@domain2.com;friends3@domain3.com" --user="myname@yourdomain.com" --password="p4word" -s "Hello from MailViaSMTP" -c "This is a mail just for testing."
+
+    The priority of three content inputing method is: piped-data, --file, --content.'''
+
+__version__ = '%prog 1.2'
+__desc__ = u'''This is a command line kit for sending mail via smtp server which can use in multiple platforms like linux, BSD, Windows etc.
+    This little kit was written by %s using python.
+    The minimum version of python required was 2.3.''' % (__author__)
 
 class Mail:
     """docstring for Mail"""
@@ -141,7 +146,9 @@ if __name__ == "__main__":
     opts, args= parser.parse_args()
 
     if opts.host is None or opts.address_from is None or opts.address_to is None:
-        sys.exit('ERROR:  All parameters followed were required: --host, --from and --to.\n\nUse -h to get more help.')
+        msg = '''ERROR:  All parameters followed were required: --host, --from and --to.
+            Use -h to get more help.'''
+        sys.exit(msg)
 
     content = None
     filename = None
@@ -160,10 +167,12 @@ if __name__ == "__main__":
         except:
             pass
     if content:
-        #send_mail(opts.subject, content, opts.address_from, opts.address_to, opts.host,opts.user, opts.password,  opts.port, opts.tls, opts.attach)
+
         mail = Mail(opts.subject, content, opts.address_from, opts.address_to)
         mail.attach(opts.attach)
         smtp = SMTPServer(opts.host, opts.user, opts.password, opts.port, opts.tls)
         smtp.sendmail(mail)
     else:
-        sys.exit('ERROR: Mail content is EMPTY! Please specify one option of listed: piped-data, --file or --content.\n\nUse -h to get more help.')
+        msg = '''ERROR: Mail content is EMPTY! Please specify one option of listed: piped-data, --file or --content.
+            Use -h to get more help.'''
+        sys.exit(msg)
