@@ -7,10 +7,8 @@
 #
 # History:
 #   2012-09-24:
-#       * some changes.
-#       * update the version number to 1.2.
-#   2012-09-19:
 #       * restruct the codes.
+#       * update the version number to 1.2.
 #   2012-08-20:
 #       * fixed homepage link broken in README.rst(thanks http://weibo.com/royshan ).
 #   2012-08-15:
