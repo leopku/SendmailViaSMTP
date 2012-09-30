@@ -160,7 +160,7 @@ if __name__ == "__main__":
     if opts.host is None or opts.address_from is None or opts.address_to is None:
         msg = '''ERROR:  All parameters followed were required: --host, --from and --to.
             Use -h to get more help.'''
-        logging.CRITICAL(msg)
+        logging.critical(msg)
         sys.exit(msg)
 
     content = None
@@ -196,5 +196,5 @@ if __name__ == "__main__":
     else:
         msg = '''ERROR: Mail content is EMPTY! Please specify one option of listed: piped-data, --file or --content.
             Use -h to get more help.'''
-        logging.CRITICAL(msg)
+        logging.critical(msgø)
         sys.exit(msg)
