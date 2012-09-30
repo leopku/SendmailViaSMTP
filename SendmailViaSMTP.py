@@ -6,6 +6,8 @@
 # Author: leopku#qq.com
 #
 # History:
+#   2012-09-30:
+#       + add --log option for debugging errors.
 #   2012-09-24:
 #       * restruct the codes.
 #       * update the version number to 1.2.
@@ -128,6 +130,11 @@ class SMTPServer:
 
 if __name__ == "__main__":
     import optparse
+    import logging
+
+    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+    LOG_FILENAME = os.path.join(PROJECT_ROOT, 'sendmail.log')
+    #logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG)
 
     parser = optparse.OptionParser(usage=__usage__, version=__version__, description=__desc__)
     parser.add_option('-a', '--attach', default=[], action='append', help='Specifies a file as attachment to be attached. Can be specified more than once.')
@@ -141,36 +148,53 @@ if __name__ == "__main__":
     parser.add_option('-u', '--user', metavar='my@domain.com', help='The username for SMTP server authorcation. Left this option empty for non-auth smtp server.')
     parser.add_option('-p', '--password', help='The password for SMTP server authorcation. NOTE: if --user option is empty, this option will be ignored.')
     parser.add_option('--tls', action='store_true', help='Using tls to communicate with SMTP server. Default is false. NOTE: if --host option equals "smtp.gmail.com", this option becomes defaults true.')
+    parser.add_option('--log', dest='log', help='specify --log=DEBUG or --log=debug, more info see document for logging module.')
     opts, args= parser.parse_args()
+
+    numeric_level = getattr(logging, opts.log.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % opts.log)
+    logging.basicConfig(filename=LOG_FILENAME, level=numeric_level, format='%(asctime)s %(message)s')
+
 
     if opts.host is None or opts.address_from is None or opts.address_to is None:
         msg = '''ERROR:  All parameters followed were required: --host, --from and --to.
             Use -h to get more help.'''
+        logging.CRITICAL(msg)
         sys.exit(msg)
 
     content = None
     filename = None
     if opts.content:
+        logging.debug('[opts content] %s' % opts.content)
         content = opts.content # content mode, mail content should read from --content option.
 
     if opts.file:
+        logging.debug('[opts file] %s' % opts.file)
         filename = opts.file # file mode, mail content should read from file.
     if not os.isatty(0):
+        logging.debug('[pip mode]')
         filename = '-' # pipe mode - mail content should read from stdin.
     if filename:
         
         try:
             fi = fileinput.FileInput(filename)
+            logging.debug('[filename] %s' % fi)
             content = '<br />'.join(fi)
         except:
             pass
     if content:
-
+        logging.debug('[content] %s' % content)
+        logging.info('preparing mail...')
         mail = Mail(opts.subject, content, opts.address_from, opts.address_to)
+        logging.info('preparing attachments...')
         mail.attach(opts.attach)
+        logging.info('preparing SMTP server...')
         smtp = SMTPServer(opts.host, opts.user, opts.password, opts.port, opts.tls)
+        logging.info('sending mail...')
         smtp.sendmail(mail)
     else:
         msg = '''ERROR: Mail content is EMPTY! Please specify one option of listed: piped-data, --file or --content.
             Use -h to get more help.'''
+        logging.CRITICAL(msg)
         sys.exit(msg)
