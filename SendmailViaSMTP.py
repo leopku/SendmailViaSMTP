@@ -196,5 +196,5 @@ if __name__ == "__main__":
     else:
         msg = '''ERROR: Mail content is EMPTY! Please specify one option of listed: piped-data, --file or --content.
             Use -h to get more help.'''
-        logging.critical(msgø)
+        logging.critical(msg)
         sys.exit(msg)
