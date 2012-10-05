@@ -166,23 +166,22 @@ if __name__ == "__main__":
     content = None
     filename = None
     if opts.content:
-        logging.debug('[opts content] %s' % opts.content)
+        logging.debug('[param mode] %s' % opts.content)
         content = opts.content # content mode, mail content should read from --content option.
 
     if opts.file:
-        logging.debug('[opts file] %s' % opts.file)
+        logging.debug('[file mode] %s' % opts.file)
         filename = opts.file # file mode, mail content should read from file.
     if not os.isatty(0):
         logging.debug('[pip mode]')
         filename = '-' # pipe mode - mail content should read from stdin.
     if filename:
-        
         try:
             fi = fileinput.FileInput(filename)
-            logging.debug('[filename] %s' % fi)
+            logging.debug('[filename] %s' % filename)
             content = '<br />'.join(fi)
         except:
-            pass
+            logging.critical('can not open %s.' % filename)
     if content:
         logging.debug('[content] %s' % content)
         logging.info('preparing mail...')
