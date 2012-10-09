@@ -22,6 +22,7 @@ Features
 * Multi recipient support.
 * Multi system supported, like Linux, BSD, Windows etc.
 * **NEW**: Attachments support(using -a/--attach option, see help message for more).
+* log support. use --log option for debugging.
 
 Requirements
 -------------
