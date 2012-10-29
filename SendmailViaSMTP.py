@@ -156,7 +156,14 @@ if __name__ == "__main__":
     numeric_level = getattr(logging, opts.log.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % opts.log)
-    logging.basicConfig(filename=LOG_FILENAME, level=numeric_level, format='%(asctime)s %(message)s')
+    if sys.version_info < (2, 3, 0):
+        raise 'Python runtime MUST greater than 2.3.0'
+    elif sys.version_info > (3, 0, 0):
+        raise 'Python 3.0 was NOT recommented!'
+    elif sys.version_info >= (2, 3, 0) and sys.version_info < (2, 4, 0):
+        logging.basicConfig()
+    else:
+        logging.basicConfig(filename=LOG_FILENAME, level=numeric_level, format='%(asctime)s %(message)s')
 
     if opts.host is None or opts.address_from is None or opts.address_to is None:
         msg = '''ERROR:  All parameters followed were required: --host, --from and --to.
