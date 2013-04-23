@@ -6,6 +6,10 @@
 # Author: leopku#qq.com
 #
 # History:
+#   2013-04-23:
+#       * fixed a bug while adding an attachment(thanks http://weibo.com/u/1738440993).
+#   2012-10-29:
+#       * fixed problem under python 2.3.x.
 #   2012-10-09:
 #       * fixed bug under crontab.
 #       * adjust priority to --file, --content and piped mode because of the bug above.
@@ -103,7 +107,7 @@ class Mail:
                 fp.close()
 
                 Encoders.encode_base64(attachment_mime)
-                attachment_mime.attadd_header('Content-Disposition', 'attachment', filename=attachment)
+                attachment_mime.add_header('Content-Disposition', 'attachment', filename=attachment)
                 self.body.attach(attachment_mime)
 
 class SMTPServer:
